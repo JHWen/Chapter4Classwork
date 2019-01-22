@@ -5,6 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -12,9 +13,17 @@ import android.widget.ImageView;
 
 import com.bumptech.glide.Glide;
 import com.bytedance.android.lesson.restapi.solution.bean.Cat;
+import com.bytedance.android.lesson.restapi.solution.newtork.ICatService;
+import com.bytedance.android.lesson.restapi.solution.newtork.RetrofitManager;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import retrofit2.Call;
+import retrofit2.Callback;
+import retrofit2.Response;
+import retrofit2.Retrofit;
+import retrofit2.converter.gson.GsonConverterFactory;
 
 import static android.support.v7.widget.RecyclerView.Adapter;
 import static android.support.v7.widget.RecyclerView.ViewHolder;
@@ -26,6 +35,8 @@ public class Solution2C1Activity extends AppCompatActivity {
     public RecyclerView mRv;
     private List<Cat> mCats = new ArrayList<>();
 
+    private static final String HOST = "https://api.thecatapi.com/";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -34,7 +45,8 @@ public class Solution2C1Activity extends AppCompatActivity {
         mRv = findViewById(R.id.rv);
         mRv.setLayoutManager(new LinearLayoutManager(this));
         mRv.setAdapter(new Adapter() {
-            @NonNull @Override
+            @NonNull
+            @Override
             public ViewHolder onCreateViewHolder(@NonNull ViewGroup viewGroup, int i) {
                 ImageView imageView = new ImageView(viewGroup.getContext());
                 imageView.setLayoutParams(new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -47,11 +59,14 @@ public class Solution2C1Activity extends AppCompatActivity {
                 ImageView iv = (ImageView) viewHolder.itemView;
 
                 // TODO-C1 (4) Uncomment these 2 lines, assign image url of Cat to this url variable
-//                String url = mCats.get(i).;
-//                Glide.with(iv.getContext()).load(url).into(iv);
+                String url = mCats.get(i).getUrl();
+                Glide.with(iv.getContext()).load(url).into(iv);
+
+                Log.d(TAG, "bindImage:" + mCats.get(i).toString());
             }
 
-            @Override public int getItemCount() {
+            @Override
+            public int getItemCount() {
                 return mCats.size();
             }
         });
@@ -70,6 +85,53 @@ public class Solution2C1Activity extends AppCompatActivity {
         // TODO-C1 (3) Send request for 5 random cats here, don't forget to use {@link retrofit2.Call#enqueue}
         // Call restoreBtn() and loadPics(response.body()) if success
         // Call restoreBtn() if failure
+        // use retrofit2.Call#enqueue
+        // 使用RetrofitManger管理 retrofit,避免每次网络请求重复创建
+        Retrofit retrofit = RetrofitManager.get(HOST);
+
+        Call<List<Cat>> call = retrofit.create(ICatService.class).searchImages(5);
+        call.enqueue(new Callback<List<Cat>>() {
+            @Override
+            public void onResponse(Call<List<Cat>> call, Response<List<Cat>> response) {
+                loadPics(response.body());
+                restoreBtn();
+            }
+
+            @Override
+            public void onFailure(Call<List<Cat>> call, Throwable t) {
+                restoreBtn();
+            }
+        });
+        // 基础的开一个子线程请求网络方法
+
+//        new Thread() {
+//            @Override
+//            public void run() {
+//                Retrofit retrofit = new Retrofit.Builder()
+//                        .baseUrl("https://api.thecatapi.com/")
+//                        .addConverterFactory(GsonConverterFactory.create())
+//                        .build();
+//
+//                Response<List<Cat>> response = null;
+//                try {
+//                    response = retrofit.create(ICatService.class).searchImages().execute();
+//                } catch (IOException e) {
+//                    throw new RuntimeException(e);
+//                }
+//
+//                final Response<List<Cat>> finalResponse = response;
+//                runOnUiThread(new Runnable() {
+//                    @Override
+//                    public void run() {
+//                        if (finalResponse != null) {
+//                            loadPics(finalResponse.body());
+//                        }
+//                        restoreBtn();
+//                    }
+//                });
+//            }
+//        }.start();
+
 
     }
 

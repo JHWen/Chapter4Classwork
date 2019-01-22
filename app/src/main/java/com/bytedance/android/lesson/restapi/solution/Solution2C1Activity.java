@@ -93,13 +93,19 @@ public class Solution2C1Activity extends AppCompatActivity {
         call.enqueue(new Callback<List<Cat>>() {
             @Override
             public void onResponse(Call<List<Cat>> call, Response<List<Cat>> response) {
-                loadPics(response.body());
+                if (response.isSuccessful()) {
+                    loadPics(response.body());
+                    Log.d(TAG, "onResponse: requesting data succeeded!");
+                } else {
+                    Log.d(TAG, "onResponse: requesting data failed!");
+                }
                 restoreBtn();
             }
 
             @Override
             public void onFailure(Call<List<Cat>> call, Throwable t) {
                 restoreBtn();
+                Log.d(TAG, "onFailure: requesting data failed!");
             }
         });
         // 基础的开一个子线程请求网络方法

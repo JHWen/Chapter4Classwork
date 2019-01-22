@@ -76,7 +76,8 @@ public class Solution2C2Activity extends AppCompatActivity {
                     } else {
                         throw new IllegalArgumentException("error data uri, mSelectedVideo = " + mSelectedVideo + ", mSelectedImage = " + mSelectedImage);
                     }
-                } else if ((getString(R.string.success_try_refresh).equals(s))) {
+                } else if ((getString(R.string.success_try_refresh).equals(s)) ||
+                        getString(R.string.fail_try_refresh).equals(s)) {
                     mBtn.setText(R.string.select_an_image);
                 }
             }
@@ -103,8 +104,6 @@ public class Solution2C2Activity extends AppCompatActivity {
                 ImageView iv = (ImageView) viewHolder.itemView;
 
                 // TODO-C2 (10) Uncomment these 2 lines, assign image url of Feed to this url variable
-//                String url = mFeeds.get(i).;
-//                Glide.with(iv.getContext()).load(url).into(iv);
                 String url = mFeeds.get(i).getImageUrl();
                 Glide.with(iv.getContext()).load(url).into(iv);
             }
@@ -170,37 +169,40 @@ public class Solution2C2Activity extends AppCompatActivity {
         // if success, make a text Toast and show
         Retrofit retrofit = RetrofitManager.get(HOST);
 
-        MultipartBody.Part image = getMultipartFromUri(IMAGE_NAME, mSelectedImage);
+        MultipartBody.Part imagePart = getMultipartFromUri(IMAGE_NAME, mSelectedImage);
 
-        MultipartBody.Part video = getMultipartFromUri(VIDEO_NAME, mSelectedVideo);
+        MultipartBody.Part videoPart = getMultipartFromUri(VIDEO_NAME, mSelectedVideo);
 
         Call<PostVideoResponse> call = retrofit.create(IMiniDouyinService.class)
-                .postVideo(STUDENT_ID, USER_NAME, image, video);
+                .postVideo(STUDENT_ID, USER_NAME, imagePart, videoPart);
 
         call.enqueue(new Callback<PostVideoResponse>() {
             @Override
             public void onResponse(Call<PostVideoResponse> call, Response<PostVideoResponse> response) {
-                if (response.code() == 200) {
+                if (response.isSuccessful()) {
                     PostVideoResponse postVideoResponse = response.body();
-                    if (postVideoResponse.isSuccess()) {
-                        Toast.makeText(getApplicationContext(), "upload success", Toast.LENGTH_LONG).show();
-                        Log.d(TAG, "onResponse(): upload success");
+                    if (postVideoResponse != null && postVideoResponse.isSuccess()) {
+                        // refresh feed
+                        mBtnRefresh.performClick();
+                        resetBtnAndToast(R.string.success_try_refresh);
+                        Log.d(TAG, "onResponse(): upload successfully");
+                    } else {
+                        resetBtnAndToast(R.string.fail_try_refresh);
+                        Log.d(TAG, "onResponse(): fail in uploading");
                     }
+                } else {
+                    resetBtnAndToast(R.string.fail_try_refresh);
+                    Log.d(TAG, "onResponse: fail in uploading");
                 }
-                resetBtn();
-                //刷新feed流
-                mBtnRefresh.performClick();
 
-                Log.d(TAG, "onResponse: " + response.toString());
             }
 
             @Override
             public void onFailure(Call<PostVideoResponse> call, Throwable t) {
-                Toast.makeText(getApplicationContext(), "upload failure", Toast.LENGTH_LONG).show();
+                resetBtnAndToast(R.string.fail_try_refresh);
                 Log.d(TAG, "onFailure: network request failure");
             }
         });
-
 
     }
 
@@ -219,7 +221,7 @@ public class Solution2C2Activity extends AppCompatActivity {
         call.enqueue(new Callback<FeedResponse>() {
             @Override
             public void onResponse(Call<FeedResponse> call, Response<FeedResponse> response) {
-                if (response.code() == 200) {
+                if (response.isSuccessful()) {
                     FeedResponse feedResponse = response.body();
                     if (feedResponse != null && feedResponse.isSuccess()) {
                         List<Feed> feeds = feedResponse.getFeeds();
@@ -246,9 +248,14 @@ public class Solution2C2Activity extends AppCompatActivity {
         mBtnRefresh.setEnabled(true);
     }
 
-    //重置选择图片、上传等一系列功能的按钮
-    private void resetBtn() {
-        mBtn.setText(R.string.success_try_refresh);
+    //重置选择图片、上传等一系列功能的按钮,并且显示Toast通知
+    private void resetBtnAndToast(int id) {
+        mBtn.setText(id);
         mBtn.setEnabled(true);
+        if (id == R.string.success_try_refresh) {
+            Toast.makeText(getApplicationContext(), "upload success", Toast.LENGTH_LONG).show();
+        } else {
+            Toast.makeText(getApplicationContext(), "upload failure", Toast.LENGTH_LONG).show();
+        }
     }
 }

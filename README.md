@@ -297,7 +297,7 @@ public interface IMiniDouyinService {
 10. finish above jobs and run app successfully as follows:
 
 <p align="center">
-    <img src="https://s23.aconvert.com/convert/p3r68-cdx67/yhr9b-lfboi.gif" alt="Sample"  width="300" height="500">
+    <img src="http://39.96.1.174/classwork4_2.gif" alt="Sample"  width="300" height="500">
     <p align="center">
         <em>app demo</em>
     </p>
